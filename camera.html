@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Testing Tesseract</title>
+  <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+  <!-- <script src='https://unpkg.com/tesseract.js@v2.0.0-alpha.4/dist/tesseract.min.js'></script> -->
+  <!-- Using a free CDN -->
+  <script src='https://cdn.rawgit.com/naptha/tesseract.js/1.0.10/dist/tesseract.js'></script>
+</head>
+<body>
+  <h1>Tesseract Testing</h1>
+
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+
+<div class="video-options">
+    <select name="" id="" class="custom-select">
+        <option value="">Select camera</option>
+    </select>
+</div>
+
+        	<video id="video" width="640" height="480" autoplay></video>
+            <button id="snap">Take a photo!</button>
+            <canvas id="canvas" width="640" height="480"></canvas>
+
+<!-- ////////Download button,from https://jsfiddle.net/wboykinm/fL0q2uce/////////  -->
+    <a id="download">Download Image</a>
+
+<!-- Start of file upload, click here -->
+<input type="file" style="position:absolute; top: -100px" id="picker" onchange="picked_file(this.files[0])">
+                
+    <canvas id='c' class="" width="400" height="300"></canvas>
+    <div class="output nose" style="padding: 25px; cursor: pointer" onclick="open_picker()"> 
+        Drag and drop an image here or click this box to upload an image. 
+<!-- End of file upload, click here -->
+
+<div class="output">
+
+    <div id="output">
+    <div id="text"></div>
+    <span id="timing"></span>
+    </div>
+    </div>
+
+<br>
+<br>
+<br>
+
+<script type="text/javascript">
+	document.body.ondragover = function(){ document.body.className = 'dragging'; return false }
+            document.body.ondragend = function(){ document.body.className = ''; return false }
+            document.body.onclick = function(){document.body.className = '';}
+            document.body.ondrop = function(e){
+                e.preventDefault();
+                document.body.className = '';
+                picked_file(e.dataTransfer.files[0]);
+                return false;
+            }
+
+             function open_picker(){
+                 var e = document.createEvent("MouseEvents");    
+                 e.initEvent('click', true, true);
+                 document.getElementById('picker').dispatchEvent(e);
+             }
+
+            function picked_file(file){
+                if(!file) return;
+                 document.getElementById("output").className = 'processing'
+
+                var ext = file.name.split('.').slice(-1)[0];
+                var reader = new FileReader();
+
+                if(file.type == "image/x-portable-bitmap" || ext == 'pbm' || ext == 'pgm' || ext == 'pnm' || ext == 'ppm'){
+                    reader.onload = function(){
+                        reset_canvas();
+                        document.getElementById("text").innerHTML = 'Reading..'
+                        o.font = '30px sans-serif'
+                        o.fillText('No previews for NetPBM format.', 50, 100);
+                        runOCR(new Uint8Array(reader.result), true);
+                    }
+                    reader.readAsArrayBuffer(file)
+                }else{
+                    reader.onload = function(){
+                        var img = new Image();
+                        img.src = reader.result;
+                        img.onerror = function(){
+                            reset_canvas();
+                            o.font = '30px sans-serif'
+                            o.fillText('Error: Invalid Image ' + file.name, 50, 100);
+                        }
+                        img.onload = function(){
+                            document.getElementById("text").innerHTML = 'Reading...'
+                            reset_canvas();
+                            var rat = Math.min(c.width / img.width, c.height / img.height);
+                            o.drawImage(img, 0, 0, img.width * rat, img.height * rat)
+                            var tmp = document.createElement('canvas')
+                            tmp.width = img.width;
+                            tmp.height = img.height;
+                            var ctx = tmp.getContext('2d')
+                            ctx.drawImage(img, 0, 0)
+                            var image_data = ctx.getImageData(0, 0, tmp.width, tmp.height);
+                            runOCR(image_data, true)
+                        }
+                        
+                    }
+                    reader.readAsDataURL(file)
+                }
+                
+            }
+</script>
+
+<!---------------------------------------- Start of the camera script ---------------------------------------->
+<script>
+// function step1(){
+    
+////////Beginning of camera script, gotten from https://davidwalsh.name/browser-camera//////// 
+var video = document.getElementById('video');
+
+
+//var image = document.querySelector('img.photo');
+
+//Camera
+if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+        video.srcObject = stream;
+        video.play();
+    });
+}
+
+const cameraOptions = document.querySelector('.video-options>select');
+
+//Canvas stuff
+var canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+//var context = canvas.getContext('2d');
+var video = document.getElementById('video');
+
+// var img        
+
+//Take a photo
+document.getElementById("snap").addEventListener("click", function() {
+    ctx.drawImage(video, 0, 0, 640, 480);
+
+    // var imageDataURL = canvas.toDataURL('image/png');
+
+    //  image.setAttribute('src', imageDataURL);
+
+    var img = convertCanvasToImage();
+
+
+    img.onload = function(){
+    console.log("loaded...", "$$$$");
+
+	console.log(img.width);
+    console.log(img.height);
+    Tesseract.recognize(img).progress((progress)=>{
+
+      if(progress.status === "recognizing text"){
+      $('#progress').text(progress.progress*100 + "%");
+      }
+
+
+
+    }).then((result)=>{
+
+      console.log(result, "$$$$");
+
+      $('#result').text(result.text);
+
+    })
+	}
+
+
+});
+
+function convertImageToCanvas(image) {
+	var canvas = document.createElement("canvas");
+	canvas.width = image.width;
+	canvas.height = image.height;
+	canvas.getContext("2d").drawImage(image, 0, 0);
+
+	return canvas;
+}
+
+function convertCanvasToImage() 
+{
+  var image = new Image();
+  image.src = canvas.toDataURL("image/png");
+  return image;
+}
+////////End of of camera script, gotten from https://davidwalsh.name/browser-camera////////
+
+////////Start of download image script, gotten from https://jsfiddle.net/wboykinm/fL0q2uce/////////   
+function downloadCanvas(link, canvasId, filename) {
+    link.href = document.getElementById(canvasId).toDataURL();
+    link.download = filename;
+}
+        
+document.getElementById('download').addEventListener('click', function() {
+    downloadCanvas(this, 'canvas', 'image.png');
+}, false);
+
+
+////////End of download image script, gotten from https://jsfiddle.net/wboykinm/fL0q2uce/////////   
+
+// var c = document.getElementById('c'),
+//                 o = c.getContext('2d');
+
+//             function reset_canvas(){
+//                 o.fillStyle = 'white'
+//                 o.fillRect(0, 0, c.width, c.height)
+//                 o.fillStyle = 'black'   
+//             }
+// }
+
+
+// document.body.ondragover = function(){ document.body.className = 'dragging'; return false }
+//             document.body.ondragend = function(){ document.body.className = ''; return false }
+//             document.body.onclick = function(){document.body.className = '';}
+//             document.body.ondrop = function(e){
+//                 e.preventDefault();
+//                 document.body.className = '';
+//                 picked_file(e.dataTransfer.files[0]);
+//                 return false;
+//             }
+
+//              function open_picker(){
+//                  var e = document.createEvent("MouseEvents");    
+//                  e.initEvent('click', true, true);
+//                  document.getElementById('picker').dispatchEvent(e);
+//              }
+
+//             function picked_file(file){
+//                 if(!file) return;
+//                  document.getElementById("output").className = 'processing'
+
+//                 var ext = file.name.split('.').slice(-1)[0];
+//                 var reader = new FileReader();
+
+//                 if(file.type == "image/x-portable-bitmap" || ext == 'pbm' || ext == 'pgm' || ext == 'pnm' || ext == 'ppm'){
+//                     reader.onload = function(){
+//                         reset_canvas();
+//                         document.getElementById("text").innerHTML = 'Reading..'
+//                         o.font = '30px sans-serif'
+//                         o.fillText('No previews for NetPBM format.', 50, 100);
+//                         runOCR(new Uint8Array(reader.result), true);
+//                     }
+//                     reader.readAsArrayBuffer(file)
+//                 }else{
+//                     reader.onload = function(){
+//                         var img = new Image();
+//                         img.src = reader.result;
+//                         img.onerror = function(){
+//                             reset_canvas();
+//                             o.font = '30px sans-serif'
+//                             o.fillText('Error: Invalid Image ' + file.name, 50, 100);
+//                         }
+//                         img.onload = function(){
+//                             document.getElementById("text").innerHTML = 'Reading...'
+//                             reset_canvas();
+//                             var rat = Math.min(c.width / img.width, c.height / img.height);
+//                             o.drawImage(img, 0, 0, img.width * rat, img.height * rat)
+//                             var tmp = document.createElement('canvas')
+//                             tmp.width = img.width;
+//                             tmp.height = img.height;
+//                             var ctx = tmp.getContext('2d')
+//                             ctx.drawImage(img, 0, 0)
+//                             var image_data = ctx.getImageData(0, 0, tmp.width, tmp.height);
+//                             runOCR(image_data, true)
+//                         }
+                        
+//                     }
+//                     reader.readAsDataURL(file)
+//                 }
+                
+//             }
+
+// Tesseract.recognize(url).then(function (result) {
+//             var resultText = result.text ? result.text.trim() : '';
+
+//             //show the result
+            
+//             $('blockquote p').html('&bdquo;' + resultText + '&ldquo;');
+//             $('blockquote footer').text('(' + resultText.length + ' characters)');
+//         });
+
+      // let img = new Image()
+      // img.src = "image.png"
+      // img.onload = function(){
+
+      //   console.log("loaded...", "$$$$");
+
+      //   Tesseract.recognize().progress((progress)=>{
+
+      // if(progress.status === "recognizing text"){
+      // $('#progress').text(progress.progress*100 + "%");
+      // }
+
+      //   }).then((result)=>{
+
+      //   console.log(result, "$$$$");
+
+      //   $('#result').text(result.text);
+
+      //   })
+      //}
+
+    
+
+</script>
+<!---------------------------------------- End of picker script ---------------------------------------->
+
+
+<!-- <script>   
+console.log("loaded...", "$$$$");
+
+        Tesseract.recognize(image).progress((progress)=>{
+
+      if(progress.status === "recognizing text"){
+      $('#progress').text(progress.progress*100 + "%");
+      }
+
+        }).then((result)=>{
+
+        console.log(result, "$$$$");
+
+        $('#result').text(result.text);
+
+        })
+</script>
+ -->
+        <!-- <img src="March.png" alt=" " width="300"> -->
+
+        <hr>
+
+        <span id="progress"></span>
+        <h6>Result</h6>         
+
+        <div id="result"></div>
+
+        </div>
+
+      </div>
+      
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <!-- <script src="tesseract.js"></script> -->
+    <!-- <script>
+    	
+    	import Tesseract from 'tesseract.js';
+
+        const { TesseractWorker } = Tesseract;
+        const worker = new TesseractWorker();
+
+    </script> -->
+
+    <script>
+      
+     // Tesseract.recognize(ctx).then(function (result) {
+     //        var resultText = result.text ? result.text.trim() : '';
+
+     //        //show the result
+            
+     //        $('blockquote p').html('&bdquo;' + resultText + '&ldquo;');
+     //        $('blockquote footer').text('(' + resultText.length + ' characters)');
+     //    });
+
+    </script>
+
+
+</body>
+</html>
+
+<!-- https://kdzwinel.github.io/JS-OCR-demo/ -->
