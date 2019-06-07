@@ -12,26 +12,48 @@
 
 .box {
     position: absolute;
+    width: 480px;
+    height: 570px;
+    position: center;
+    left:0;
+    right:0;
+    margin-left: auto;
+    margin-right: auto;
+
     border-style: solid;
     border-color: #AEC86B;
     border-width: 2px;
     background-color: white;
-    bottom: 0px;
-    left: 350px;
-    margin-left: auto;
+
+    border-radius: 1.5em;
+    margin: 1em auto;
+ /* bottom: 0px;
+    left: 25%;
+   margin-left: auto;
     margin-right: auto;
     width: 480px;
     height: 570px;
     margin: 1em auto;
     border-radius: 1.5em;
     font-family: 'Ubuntu', sans-serif;
-    z-index: -1;
+    z-index: -1;*/
 }
 
 #cam {
-  position: relative;
+    position: relative;
+    width:100px;
+    height:100px;
+    left:0;
+    right:0;
+    margin-left: auto;
+    margin-right: auto;
+    left: 200px;
+    top: 480px;
+ /* position: relative;
   width:100px;
   height:100px;
+  left: 530px;
+  top: 480px;*/
 }
 
 /*#footer {
