@@ -33,14 +33,14 @@
 #call {
      position: relative;
     
-     width:80px;
-     height:80px;
+     width:50px;
+     height:50px;
 
      left:0;
      right:0;
-     padding-top: 100%;
-     padding-left: 16px;
-     margin: 2em auto;
+     
+     padding-left: 50px;
+     margin-bottom: 45px;
 }
 
 #cam {
@@ -61,14 +61,14 @@
 
      position: relative;
     
-     width:80px;
-     height:80px;
+     width:50px;
+     height:50px;
 
      left:0;
      right:0;
-     padding-top: 100%;
-     padding-left: 60px;
-     margin: 2em auto;
+     padding-top: 70%;
+     padding-left: 50px;
+     margin-bottom: 43px;
 }
 
 
